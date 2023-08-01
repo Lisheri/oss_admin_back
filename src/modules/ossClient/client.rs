@@ -20,8 +20,8 @@ impl OssClient {
         dotenv().ok();
         let access_key_id = env::var("ACCESS_KEY_ID").expect("ACCESS_KEY_ID is not defined");
         let access_key_secret = env::var("ACCESS_KEY_SECRET").expect("ACCESS_KEY_ID is not defined");
-        let bucket = env::var("BUCKET").expect("ACCESS_KEY_ID is not defined");
-        let region = env::var("REGION").expect("ACCESS_KEY_ID is not defined");
+        let bucket = env::var("BUCKET").expect("BUCKET is not defined");
+        let region = env::var("REGION").expect("REGION is not defined");
         Self {
             instance: Arc::new(OSS::new(
                 Into::<Cow<str>>::into(access_key_id),
