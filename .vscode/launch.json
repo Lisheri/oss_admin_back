@@ -1,0 +1,119 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'service'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=service",
+                    "--package=oss_admin_back"
+                ],
+                "filter": {
+                    "name": "service",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'service'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=service",
+                    "--package=oss_admin_back"
+                ],
+                "filter": {
+                    "name": "service",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'main_service'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=main_service",
+                    "--package=oss_admin_back"
+                ],
+                "filter": {
+                    "name": "main_service",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'main_service'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=main_service",
+                    "--package=oss_admin_back"
+                ],
+                "filter": {
+                    "name": "main_service",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'oss_admin_back'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=oss_admin_back",
+                    "--package=oss_admin_back"
+                ],
+                "filter": {
+                    "name": "oss_admin_back",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'oss_admin_back'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=oss_admin_back",
+                    "--package=oss_admin_back"
+                ],
+                "filter": {
+                    "name": "oss_admin_back",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
