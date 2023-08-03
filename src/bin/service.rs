@@ -1,45 +1,57 @@
-use std::collections::HashMap;
+use actix_cors::Cors;
+use actix_web::{http, web, App, HttpServer};
+use routers::oss::oss_routes;
+use std::{io, sync::Mutex};
 
-use serde::{Deserialize, Serialize};
+#[path = "../modules/modules.rs"]
+mod modules;
 
-use std::thread;
+#[path = "../routers/routers.rs"]
+mod routers;
 
-#[derive(Debug, Deserialize)]
-pub struct ListQuery {
-    pub prefix: String,   // 查询前缀
-    pub max_keys: String, // 分页条数
-}
+#[path = "../handlers/handlers.rs"]
+mod handlers;
 
 #[path = "../error/error.rs"]
 mod error;
 
-#[path = "../modules/ossClient/client.rs"]
-mod client;
+use error::MyError;
+use modules::{client::OssClient, state::AppState};
 
-use client::OssClient;
-
-#[derive(Debug, Serialize)]
-struct ResponseResult<'a, T> {
-    code: u32,
-    msg: &'a str,
-    data: T,
-}
+use crate::routers::health::general_routes;
 
 #[actix_rt::main]
-async fn main() {
-    let t1 = thread::spawn(move|| {
-        get_all_list();
+async fn main() -> io::Result<()> {
+    // 创建可共享的 state
+    let shared_data = web::Data::new(AppState {
+        health_check_response: "非常好".to_string(),
+        visit_count: Mutex::new(0), // 访问数量
+        oss_client: OssClient::new(),
     });
-    t1.join().unwrap();
 
-    pub fn get_all_list() {
-        let headers: HashMap<String, String> = HashMap::new();
-        let mut resources: HashMap<String, Option<String>> = HashMap::new();
-        resources.insert("prefix".into(), Some("images".to_string()));
-        resources.insert("max_keys".into(), Some("10".into()));
-
-        let _ = OssClient::new().get_list(headers, resources).map(|list| {
-            println!("list is: {:?}", list);
-        });
-    }
+    // 创建 应用服务器
+    let app = move || {
+        // 处理跨域
+        let cors = Cors::default()
+            .allowed_origin("http://localhost:8080/")
+            .allowed_origin_fn(|origin, _req_head| {
+                // 允许所有以 localhost 开头的域
+                origin.as_bytes().starts_with(b"http://localhost")
+            })
+            .allowed_methods(vec!["GET", "POST", "DELETE"]) // 允许的请求方法
+            .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
+            .allowed_header(http::header::CONTENT_TYPE) // 允许的请求头
+            .max_age(3600); // 3600s未响应就截断
+        App::new()
+            // 注册全局状态管理state
+            .app_data(shared_data.clone())
+            .app_data(web::JsonConfig::default().error_handler(|_err, _req| {
+                // 注册拦截不合法请求, 如果检测到前端传递不合法输入, 就会进入
+                MyError::InvalidInput("Please provide valid json input".to_string()).into()
+            }))
+            .configure(general_routes)
+            .wrap(cors)
+            .configure(oss_routes)
+    };
+    HttpServer::new(app).bind("127.0.0.1:3000")?.run().await
 }

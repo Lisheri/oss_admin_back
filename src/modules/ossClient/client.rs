@@ -1,13 +1,14 @@
 use crate::error::MyError;
+use dotenv::dotenv;
+// use oss_rust_sdk::{async_object::AsyncObjectAPI, oss::OSS, prelude::ListObjects};
 use oss_rust_sdk::prelude::*;
 use std::{
     borrow::Cow,
     collections::HashMap,
+    env,
     sync::{mpsc, Arc},
     thread,
-    env
 };
-use dotenv::dotenv;
 
 #[derive(Clone)]
 pub struct OssClient {
@@ -19,7 +20,8 @@ impl OssClient {
     pub fn new() -> Self {
         dotenv().ok();
         let access_key_id = env::var("ACCESS_KEY_ID").expect("ACCESS_KEY_ID is not defined");
-        let access_key_secret = env::var("ACCESS_KEY_SECRET").expect("ACCESS_KEY_ID is not defined");
+        let access_key_secret =
+            env::var("ACCESS_KEY_SECRET").expect("ACCESS_KEY_ID is not defined");
         let bucket = env::var("BUCKET").expect("BUCKET is not defined");
         let region = env::var("REGION").expect("REGION is not defined");
         Self {
@@ -56,5 +58,14 @@ impl OssClient {
                 Err(MyError::ActixError(err.to_string()))
             }
         }
+
+        // async异步方法(2选1)
+        // match self.instance.list_object(headers, resources).await {
+        //     Ok(list) => Ok(list),
+        //     Err(err) => {
+        //         println!("err msg is: {:?}", err);
+        //         Err(MyError::ActixError(err.to_string()))
+        //     }
+        // }
     }
 }

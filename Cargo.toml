@@ -11,12 +11,9 @@ actix-web = "4"
 actix-rt = "2.7.0"
 serde = { version = "1.0.134", features = ["derive"] }
 serde_json = { version = "1.0" }
-oss-rust-sdk  = "0.9.1"
+oss-rust-sdk  = { path = "oss-rust-sdk" }
 tokio="1.28.2"
 dotenv = "0.15.0"
 
 [[bin]]
 name = "service"
-
-[[bin]]
-name = "main_service"

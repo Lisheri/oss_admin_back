@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use actix_web::{web, HttpResponse};
-use oss_rust_sdk::prelude::ListObjects;
+use oss_rust_sdk::object;
 // use oss_sdk::bucket::ListBuckets;
 use serde::Serialize;
 
@@ -10,9 +10,20 @@ use crate::{error::MyError, modules::state::AppState};
 #[path = "./list_query.rs"]
 mod list_query;
 
+#[path = "./utils.rs"]
+mod utils;
+
 use list_query::ListQuery;
 
+use self::{
+    list_query::ListObjectCamelCase,
+    utils::{
+        get_is_end, get_last_marker, get_oss_params, transform_list_object_data_to_camel_case,
+    },
+};
+
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct ResponseResult<'a, T> {
     code: u32,
     msg: &'a str,
@@ -24,21 +35,26 @@ pub async fn get_all_list(
     params: web::Query<ListQuery>,
 ) -> Result<HttpResponse, MyError> {
     let headers: HashMap<String, String> = HashMap::new();
-    let mut resources: HashMap<String, Option<String>> = HashMap::new();
     let inner_params = params.into_inner();
-    resources.insert("prefix".into(), Some(inner_params.prefix));
-    resources.insert("max_keys".into(), Some(inner_params.max_keys));
+    let resources = get_oss_params(&inner_params);
 
     app_state
         .oss_client
         .clone()
         .get_list(headers, resources)
         .map(|list| {
-            println!("list is: {:?}", &list);
-            HttpResponse::Ok().json(ResponseResult::<ListObjects> {
+            let contents_ref: &Vec<object::Object> = list.contents();
+            let common_prefix_ref: &Vec<object::CommonPrefix> = list.common_prefixes();
+            // 记录最后一位marker, 返回给前端, 分页查询时候带上
+            let last_marker: &str = get_last_marker(contents_ref, common_prefix_ref);
+            let is_end = get_is_end(&inner_params, contents_ref.len() + common_prefix_ref.len());
+            // 转换字段
+            let data: ListObjectCamelCase =
+                transform_list_object_data_to_camel_case(list.clone(), last_marker, is_end);
+            HttpResponse::Ok().json(ResponseResult::<ListObjectCamelCase> {
                 code: 0,
                 msg: "success",
-                data: list,
+                data,
             })
         })
 }
