@@ -12,3 +12,5 @@ pub struct AppState {
     pub visit_count: Mutex<u32>,
     pub oss_client: OssClient,
 }
+
+pub const SUCCESS_CODE: u32 = 0;

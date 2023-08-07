@@ -1,11 +1,14 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
 
 use actix_web::{web, HttpResponse};
 use oss_rust_sdk::object;
 // use oss_sdk::bucket::ListBuckets;
 use serde::Serialize;
 
-use crate::{error::MyError, modules::state::AppState};
+use crate::{
+    error::MyError,
+    modules::state::{AppState, SUCCESS_CODE},
+};
 
 #[path = "./list_query.rs"]
 mod list_query;
@@ -16,7 +19,7 @@ mod utils;
 use list_query::ListQuery;
 
 use self::{
-    list_query::ListObjectCamelCase,
+    list_query::{ListObjectCamelCase, PutFolderBody},
     utils::{
         get_is_end, get_last_marker, get_oss_params, transform_list_object_data_to_camel_case,
     },
@@ -25,7 +28,7 @@ use self::{
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ResponseResult<'a, T> {
-    code: u32,
+    code: &'static u32,
     msg: &'a str,
     data: T,
 }
@@ -52,9 +55,31 @@ pub async fn get_all_list(
             let data: ListObjectCamelCase =
                 transform_list_object_data_to_camel_case(list.clone(), last_marker, is_end);
             HttpResponse::Ok().json(ResponseResult::<ListObjectCamelCase> {
-                code: 0,
+                code: &SUCCESS_CODE,
                 msg: "success",
                 data,
+            })
+        })
+}
+
+// 新建文件夹
+pub async fn put_file_folder(
+    app_state: web::Data<AppState>,
+    params: web::Json<PutFolderBody>,
+) -> Result<HttpResponse, MyError> {
+    let headers: HashMap<String, String> = HashMap::new();
+    // let params_ref = Rc::new(params);
+    let inner_params = params.into_inner();
+    let resources = get_oss_params(&ListQuery::from(&inner_params));
+    app_state
+        .oss_client
+        .clone()
+        .put_file_folder(inner_params.folder_name.unwrap(), headers, resources)
+        .map(|res| {
+            HttpResponse::Ok().json(ResponseResult::<()> {
+                code: &SUCCESS_CODE,
+                msg: "success",
+                data: res,
             })
         })
 }

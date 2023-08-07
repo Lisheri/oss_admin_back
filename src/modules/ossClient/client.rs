@@ -2,10 +2,11 @@ use crate::error::MyError;
 use dotenv::dotenv;
 // use oss_rust_sdk::{async_object::AsyncObjectAPI, oss::OSS, prelude::ListObjects};
 use oss_rust_sdk::prelude::*;
+use std::io::{BufReader, BufWriter};
 use std::{
     borrow::Cow,
     collections::HashMap,
-    env,
+    env, fs,
     sync::{mpsc, Arc},
     thread,
 };
@@ -67,5 +68,32 @@ impl OssClient {
         //         Err(MyError::ActixError(err.to_string()))
         //     }
         // }
+    }
+
+    pub fn put_file_folder(
+        self,
+        file_name: String,
+        headers: HashMap<String, String>,
+        resources: HashMap<String, Option<String>>,
+    ) -> Result<(), MyError> {
+        let (tx, rx) = mpsc::channel();
+        let rt = thread::spawn(move || {
+            let buffer = [0u8; 10];
+            let res =
+                self.instance
+                    .put_object_from_buffer(&buffer, file_name, headers, resources);
+            tx.send(res.unwrap()).unwrap();
+        });
+
+        rt.join().unwrap();
+
+        match rx.recv() {
+            Ok(res) => Ok(res),
+            Err(err) => {
+                // 错误传递
+                println!("err msg is: {:?}", err);
+                Err(MyError::ActixError(err.to_string()))
+            }
+        }
     }
 }

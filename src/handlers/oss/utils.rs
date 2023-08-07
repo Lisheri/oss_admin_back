@@ -1,8 +1,9 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, env};
 
 use oss_rust_sdk::{object, prelude::ListObjects};
 
-use super::list_query::{CommonPrefix, ListObjectCamelCase, ListQuery, Object, Owner};
+use super::list_query::{CommonPrefix, Content, ListObjectCamelCase, ListQuery, Owner};
+use dotenv::dotenv;
 
 pub fn get_oss_params(inner_params: &ListQuery) -> HashMap<String, Option<String>> {
     let mut resources: HashMap<String, Option<String>> = HashMap::new();
@@ -39,17 +40,30 @@ pub fn get_last_marker<'a>(
     }
 }
 
+pub fn get_img_url(key: &String) -> String {
+    dotenv().ok();
+    let bucket = env::var("BUCKET").expect("BUCKET is not defined");
+    let region = env::var("REGION").expect("REGION is not defined");
+    // 拼接img_url
+    format!(
+        "https://{}.{}/{}",
+        bucket,
+        region.replacen("https://", "", 1),
+        key
+    )
+}
+
 // 转换字段
 pub fn transform_list_object_data_to_camel_case(
     list: ListObjects,
     last_marker: &str,
     is_end: bool,
 ) -> ListObjectCamelCase {
-    let contents: Vec<Object> = list
+    let contents: Vec<Content> = list
         .contents()
         .iter()
         .map(|item| {
-            Object::new(
+            Content::new(
                 item.key().into(),
                 item.last_modified().into(),
                 item.size().into(),
@@ -57,7 +71,12 @@ pub fn transform_list_object_data_to_camel_case(
                 item.r#type().into(),
                 item.storage_class().into(),
                 Owner::new(item.id().into(), item.display_name().into()),
+                list.prefix(),
             )
+        })
+        .filter(|item| {
+            // 过滤当前文件夹本身
+            item.name().len() != 0
         })
         .collect();
 

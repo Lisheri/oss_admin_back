@@ -33,8 +33,8 @@ async fn main() -> io::Result<()> {
     let app = move || {
         // 处理跨域
         let cors = Cors::default()
-            .allowed_origin("http://localhost:8080/")
-            .allowed_origin_fn(|origin, _req_head| {
+            .allowed_origin("http://localhost:8000")
+            .allowed_origin_fn(|origin: &http::header::HeaderValue, _req_head| {
                 // 允许所有以 localhost 开头的域
                 origin.as_bytes().starts_with(b"http://localhost")
             })
